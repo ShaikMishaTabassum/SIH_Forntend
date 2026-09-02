@@ -28,15 +28,15 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-ivory">
-      <header className="flex justify-between items-center px-6 py-4 border-b border-charcoal/10">
+    <div className="h-screen w-screen flex flex-col bg-ivory overflow-hidden">
+      <header className="flex justify-between items-center px-6 py-4 border-b border-charcoal/10 flex-shrink-0">
         <h1 className="font-serif text-2xl text-teal font-bold">Thermal Intelligence</h1>
         <span className="text-xs text-charcoal font-mono">
           {hotspots.length} sources - updated 2 min ago
           {usingMockData && " (demo data)"}
         </span>
       </header>
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 min-h-0">
         <div className="w-[68%] h-full">
           <ThermalMap hotspots={hotspots} />
         </div>
