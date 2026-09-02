@@ -1,0 +1,34 @@
+﻿export default function PriorityWatchlist({ hotspots }) {
+  const ranked = [...hotspots].sort((a, b) => b.priorityScore - a.priorityScore);
+
+  return (
+    <div className="w-full h-full bg-ivory border-l border-charcoal/20 p-4 overflow-y-auto">
+      <h2 className="font-serif text-lg text-teal font-bold">Priority Watchlist</h2>
+      <p className="text-xs text-gray-500 mb-3">Ranked by risk score</p>
+
+      {ranked.map((h, i) => (
+        <div
+          key={h.id}
+          className={`py-3 border-b border-charcoal/10 ${
+            i === 0 ? "bg-gold/10 border-l-4 border-gold pl-2" : ""
+          }`}
+        >
+          <span className="font-serif font-bold text-gold text-sm">
+            {String(i + 1).padStart(2, "0")}
+          </span>
+          <div className="font-serif text-sm text-charcoal">{h.name}</div>
+          <div className="text-xs text-gray-500">
+            Priority {h.priorityScore} · {h.population.toLocaleString()} people · active since{" "}
+            {h.firstDetected.split(" ")[1]}
+          </div>
+          <div className="w-full bg-gray-200 h-1 rounded mt-1">
+            <div
+              className="bg-gold h-1 rounded"
+              style={{ width: `${h.priorityScore * 10}%` }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
