@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import ThermalMap from "../components/ThermalMap";
 import PriorityWatchlist from "../components/PriorityWatchlist";
 import { fetchHotspots } from "../api/hotspots";
@@ -31,11 +32,19 @@ export default function Dashboard() {
   return (
     <div className="h-screen w-screen flex flex-col bg-ivory overflow-hidden">
       <header className="flex justify-between items-center px-6 py-4 border-b border-charcoal/10 flex-shrink-0">
-        <h1 className="font-serif text-2xl text-teal font-bold">Thermal Intelligence</h1>
-        <span className="text-xs text-charcoal font-mono">
-          {hotspots.length} sources - updated 2 min ago
-          {usingMockData && " (demo data)"}
-        </span>
+        <div>
+          <h1 className="font-serif text-3xl text-teal font-extrabold tracking-tight">GeoSentinel</h1>
+          <p className="text-xs text-gray-500">Industrial Thermal Intelligence - PS 26162</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <Link to="/list" className="text-xs text-gold underline font-sans">
+            Priority Rankings
+          </Link>
+          <span className="text-xs text-charcoal font-mono">
+            {hotspots.length} sources - updated 2 min ago
+            {usingMockData && " (demo data)"}
+          </span>
+        </div>
       </header>
       <div className="flex flex-1 min-h-0">
         <div className="w-[68%] h-full">

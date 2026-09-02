@@ -18,12 +18,12 @@ export default function ListView() {
           </p>
         </div>
         <Link to="/" className="text-gold underline font-sans text-sm">
-          Map ⟷ List
+          Map - List
         </Link>
       </div>
 
       <p className="text-xs text-charcoal mb-6">
-        {industrialCount} Industrial Sources · {wildfireCount} Wildfires · {anomalyCount} Anomalies Flagged
+        {industrialCount} Industrial Sources - {wildfireCount} Wildfires - {anomalyCount} Anomalies Flagged
       </p>
 
       <div className="flex gap-8">
@@ -85,10 +85,10 @@ export default function ListView() {
                 <td className="py-3 text-sm">{h.population.toLocaleString()}</td>
                 <td className="py-3 text-sm text-gray-500">{h.firstDetected}</td>
                 <td className="py-3 text-xs">
-                  {h.trend === "rising" && "▲ rising"}
-                  {h.trend === "stable" && "● stable"}
-                  {h.trend === "declining" && "▼ declining"}
-                  {h.trend === "seasonal" && "▲ seasonal"}
+                  {h.trend === "rising" && "up rising"}
+                  {h.trend === "stable" && "stable"}
+                  {h.trend === "declining" && "down declining"}
+                  {h.trend === "seasonal" && "up seasonal"}
                 </td>
               </tr>
             ))}
