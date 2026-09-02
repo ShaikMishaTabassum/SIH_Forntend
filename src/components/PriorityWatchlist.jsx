@@ -1,4 +1,4 @@
-﻿export default function PriorityWatchlist({ hotspots }) {
+﻿export default function PriorityWatchlist({ hotspots, selectedId, onSelectHotspot }) {
   const ranked = [...hotspots].sort((a, b) => b.priorityScore - a.priorityScore);
 
   return (
@@ -9,8 +9,9 @@
       {ranked.map((h, i) => (
         <div
           key={h.id}
-          className={`py-3 border-b border-charcoal/10 ${
-            i === 0 ? "bg-gold/10 border-l-4 border-gold pl-2" : ""
+          onClick={() => onSelectHotspot(h.id)}
+          className={`py-3 border-b border-charcoal/10 cursor-pointer hover:bg-gold/5 transition-colors ${
+            selectedId === h.id ? "bg-gold/20 border-l-4 border-gold pl-2" : i === 0 ? "bg-gold/10 border-l-4 border-gold pl-2" : ""
           }`}
         >
           <span className="font-serif font-bold text-gold text-sm">
@@ -18,7 +19,7 @@
           </span>
           <div className="font-serif text-sm text-charcoal">{h.name}</div>
           <div className="text-xs text-gray-500">
-            Priority {h.priorityScore} · {h.population.toLocaleString()} people · active since{" "}
+            Priority {h.priorityScore} - {h.population.toLocaleString()} people - active since{" "}
             {h.firstDetected.split(" ")[1]}
           </div>
           <div className="w-full bg-gray-200 h-1 rounded mt-1">
