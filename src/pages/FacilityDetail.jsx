@@ -8,6 +8,7 @@ import {
 } from "recharts";
 import { hotspots as mockHotspots } from "../data/hotspots";
 import { classStyle } from "../data/classificationStyle";
+import { behaviorStyle } from "../data/behaviorStyle";
 import { generateDetectionHistory, aggregateByYear, computeStats } from "../data/mockDetectionHistory";
 
 function findMonsoonBands(series) {
@@ -51,6 +52,8 @@ export default function FacilityDetail() {
 
   const chartData = granularity === "Yearly" ? yearlySeries : monthlySeries;
   const color = classStyle[hotspot.classification] ? classStyle[hotspot.classification].color : "#0E4749";
+  const hasBehavior = hotspot.behaviorStatus !== undefined;
+  const behaviorColor = hasBehavior ? behaviorStyle[hotspot.behaviorStatus].color : "#8B8578";
 
   return (
     <div className="min-h-screen bg-ivory p-8 font-sans">
@@ -102,11 +105,40 @@ export default function FacilityDetail() {
           <Divider />
           <StatBlock value={hotspot.population.toLocaleString()} label="Population within 2km" />
           <Divider />
-          <StatBlock value={hotspot.firstDetected} label="First Detected" />
-          <Divider />
-          <StatBlock value={stats.yearsActive + " yrs"} label="Time Active Unverified" accent />
+          {hasBehavior ? (
+            <>
+              <div>
+                <div className="font-serif text-2xl font-bold" style={{ color: behaviorColor }}>
+                  {hotspot.behaviorStatus}
+                </div>
+                <div className="text-xs text-charcoal/60">Behaviour Status</div>
+              </div>
+              <Divider />
+              <StatBlock value={hotspot.deviationScore + "%"} label="Deviation from Baseline" accent />
+            </>
+          ) : (
+            <StatBlock value="N/A" label="Behaviour Status" />
+          )}
         </div>
       </div>
+
+      {hasBehavior && (
+        <div className="mb-8 bg-white/50 border border-charcoal/10 rounded-lg p-4">
+          <div className="font-serif font-bold text-sm mb-2" style={{ color: behaviorColor }}>
+            Behaviour Evidence
+          </div>
+          <ul className="text-xs text-charcoal/70 space-y-1">
+            {hotspot.behaviorEvidence.map((e, i) => (
+              <li key={i}>&bull; {e}</li>
+            ))}
+          </ul>
+          <div className="text-[11px] text-charcoal/50 mt-3 grid grid-cols-3 gap-4">
+            <div>Baseline FRP: <span className="font-semibold">{hotspot.baselineFRP} MW</span> &rarr; Current: <span className="font-semibold">{hotspot.frp} MW</span></div>
+            <div>Baseline Duration: <span className="font-semibold">{hotspot.baselineDurationDays}d</span> &rarr; Current: <span className="font-semibold">{hotspot.currentDurationDays}d</span></div>
+            <div>Baseline Frequency: <span className="font-semibold">{hotspot.baselineFrequency}/mo</span> &rarr; Current: <span className="font-semibold">{hotspot.currentFrequency}/mo</span></div>
+          </div>
+        </div>
+      )}
 
       <div className="relative">
         <ResponsiveContainer width="100%" height={340}>
@@ -171,28 +203,34 @@ export default function FacilityDetail() {
           <>
             <div className="absolute top-0 left-12 max-w-[210px]">
               <div className="font-serif font-bold text-[17px] text-charcoal leading-tight mb-1 tracking-tight">
-                First detected here
+                Historical baseline
               </div>
               <div className="font-serif italic text-[13px] text-charcoal/65 leading-snug">
-                Earliest FIRMS signature at this location &mdash; {stats.yearsActive} years of continuous unverified activity
+                {hasBehavior
+                  ? `Typical activity: ${hotspot.baselineFRP} MW FRP, ${hotspot.baselineFrequency} detections/month`
+                  : "Long-term detection pattern established from FIRMS archive"}
               </div>
             </div>
 
             <div className="absolute top-0 max-w-[230px]" style={{ left: "38%" }}>
               <div className="font-serif font-bold text-[17px] text-charcoal leading-tight mb-1 tracking-tight">
-                Capacity expansion signature
+                {stats.trendPct !== null ? "Activity shift" : "Ongoing monitoring"}
               </div>
               <div className="font-serif italic text-[13px] text-charcoal/65 leading-snug">
-                {stats.trendPct}% increase in detection frequency between 2021-2022, consistent with new operational units coming online
+                {stats.trendPct !== null
+                  ? `${stats.trendPct}% change in detection frequency between 2021-2022`
+                  : "Detection frequency tracked continuously for this location"}
               </div>
             </div>
 
             <div className="absolute top-0 right-4 max-w-[230px] text-right">
-              <div className="font-serif font-bold text-[17px] text-charcoal leading-tight mb-1 tracking-tight">
-                Steady-state operation
+              <div className="font-serif font-bold text-[17px] leading-tight mb-1 tracking-tight" style={{ color: hasBehavior ? behaviorColor : "#2A2724" }}>
+                {hasBehavior ? `Current: ${hotspot.behaviorStatus}` : "Steady-state operation"}
               </div>
               <div className="font-serif italic text-[13px] text-charcoal/65 leading-snug">
-                Day/night consistency 94%, seasonal variance 0.4 &mdash; strong industrial signature, negligible wildfire likelihood
+                {hasBehavior
+                  ? hotspot.behaviorEvidence[0]
+                  : "Day/night consistency high, seasonal variance low - stable pattern"}
               </div>
             </div>
           </>
@@ -200,8 +238,8 @@ export default function FacilityDetail() {
       </div>
 
       <div className="text-xs text-charcoal/70 mt-2">
-        {stats.trendPct !== null && <>Trend: +{stats.trendPct}% (2021-22) &middot; </>}
-        Avg monthly detections: {stats.avgMonthly} &middot; Longest observation gap: {stats.longestGapDays} days (monsoon, Jul 2025) &middot; Classification confidence: {hotspot.confidence}%
+        {stats.trendPct !== null && <>Trend: {stats.trendPct >= 0 ? "+" : ""}{stats.trendPct}% (2021-22) &middot; </>}
+        Avg monthly detections: {stats.avgMonthly} &middot; Longest observation gap: {stats.longestGapDays} days (monsoon) &middot; Classification confidence: {hotspot.confidence}%
       </div>
       <p className="text-[10px] text-charcoal/50 mt-1 uppercase tracking-wide">
         Shaded periods indicate reduced satellite visibility due to monsoon cloud cover &mdash; persistence calculated against observed days only, not calendar days, to avoid undercounting.
@@ -234,4 +272,3 @@ function StatBlock({ value, label, accent }) {
 function Divider() {
   return <div className="w-px bg-charcoal/15 self-stretch" />;
 }
-
