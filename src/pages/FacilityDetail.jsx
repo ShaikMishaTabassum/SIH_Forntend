@@ -1,5 +1,5 @@
 ﻿import { useParams, Link } from "react-router-dom";
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Map, { Marker } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import {
@@ -9,6 +9,7 @@ import {
 import { hotspots as mockHotspots } from "../data/hotspots";
 import { classStyle } from "../data/classificationStyle";
 import { behaviorStyle } from "../data/behaviorStyle";
+import { fetchEventDetail } from "../api/hotspots";
 import { generateDetectionHistory, aggregateByYear, computeStats } from "../data/mockDetectionHistory";
 
 function findMonsoonBands(series) {
@@ -25,12 +26,58 @@ function findMonsoonBands(series) {
   return bands;
 }
 
+// Live backend data has no firstDetected in "Mon YYYY" format (the mock
+// chart generator needs that shape). This gives live-data facilities a
+// reasonable placeholder starting point (1 year back) purely so the mock
+// chart generator has something to build a timeline from - it does NOT
+// represent a real detection date.
+function normalizeLiveEvent(live) {
+  let firstDetectedLabel;
+  if (live.firstDetected) {
+    const d = new Date(live.firstDetected);
+    firstDetectedLabel = d.toLocaleString("en-US", { month: "short" }) + " " + d.getFullYear();
+  } else {
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    firstDetectedLabel = oneYearAgo.toLocaleString("en-US", { month: "short" }) + " " + oneYearAgo.getFullYear();
+  }
+
+  return {
+    ...live,
+    firstDetected: firstDetectedLabel,
+    population: live.population ?? null,
+    priorityScore: live.priorityScore ?? null,
+  };
+}
+
 export default function FacilityDetail() {
   const { id } = useParams();
   const [granularity, setGranularity] = useState("Monthly");
+  const [hotspot, setHotspot] = useState(undefined); // undefined = loading, null = not found
+  const [isLive, setIsLive] = useState(false);
   const mapTilerKey = import.meta.env.VITE_MAPTILER_KEY;
 
-  const hotspot = mockHotspots.find((h) => h.id === id);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      const live = await fetchEventDetail(id);
+      if (cancelled) return;
+
+      if (live) {
+        setHotspot(normalizeLiveEvent(live));
+        setIsLive(true);
+        return;
+      }
+
+      const mock = mockHotspots.find((h) => h.id === id) || null;
+      setHotspot(mock);
+      setIsLive(false);
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, [id]);
 
   const monthlySeries = useMemo(() => (hotspot ? generateDetectionHistory(hotspot) : []), [hotspot]);
   const yearlySeries = useMemo(() => aggregateByYear(monthlySeries), [monthlySeries]);
@@ -42,7 +89,15 @@ export default function FacilityDetail() {
     [monthlySeries]
   );
 
-  if (!hotspot) {
+  if (hotspot === undefined) {
+    return (
+      <div className="h-screen flex items-center justify-center font-serif text-teal">
+        Loading facility...
+      </div>
+    );
+  }
+
+  if (hotspot === null) {
     return (
       <div className="h-screen flex items-center justify-center font-serif text-teal">
         Facility not found. <Link to="/" className="underline ml-2">Back to map</Link>
@@ -63,6 +118,7 @@ export default function FacilityDetail() {
           <h1 className="font-serif text-4xl text-teal font-bold mt-2">{hotspot.name}</h1>
           <p className="text-sm text-charcoal/70 italic mt-1">
             Facility profile &middot; Hotspot {hotspot.id} &middot; Classified: {hotspot.classification}
+            {isLive && <span className="text-gold not-italic"> &middot; Live data</span>}
           </p>
         </div>
         <button
@@ -101,9 +157,9 @@ export default function FacilityDetail() {
         </div>
 
         <div className="flex gap-10">
-          <StatBlock value={hotspot.priorityScore} label="Priority Score" accent />
+          <StatBlock value={hotspot.priorityScore ?? "N/A"} label="Priority Score" accent />
           <Divider />
-          <StatBlock value={hotspot.population.toLocaleString()} label="Population within 2km" />
+          <StatBlock value={hotspot.population != null ? hotspot.population.toLocaleString() : "N/A"} label="Population within 2km" />
           <Divider />
           {hasBehavior ? (
             <>
